@@ -1,68 +1,48 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ScrollView, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { Ionicons, Feather, Fontisto } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
-
-const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get("screen")
-const getRand = () => Math.random() * parseInt(255 / 2)
-const API_ID = '784ab24ff2ed5d94d4288abed9e25d13'
-const codes = {
-  "Rain": 'rains',
-  "Snow" : 'snowflake',
-  "Clear" : "day-sunny",
-  "Drizzle": "rain",
-  "Clouds": 'cloudy'
-}
+import {theme} from './color';
 
 export default function App() {
-  const [city, setCity] = useState("Loading...");
-  const [weathers, setWeathers] = useState([]);
+  const [working, setWorking] = useState(true)
+  const [todo, setTodo] = useState()
+  const [todos, setTodos] = useState({})
 
-  useEffect(async () => {  
-    let { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== 'granted') {
+  const save = () => {
+    if(todo == '') {
       return;
     }
-  
-    const {coords: { latitude, longitude }} = await Location.getCurrentPositionAsync({accuracy: 5});
-    const [{city, region}] = await Location.reverseGeocodeAsync(
-      { latitude, longitude },
-      { useGoogleMaps: false }
-    );
-    setCity(`${region} ${city}`)
 
-    fetch(`https://api.openweathermap.org/data/2.5/onecall?lat=${latitude}&lon=${longitude}&exclude=alerts&appid=${API_ID}&units=metric`).then((el) => el.json()).then((json) => {
-      setWeathers(json["daily"])
-    })
-  }, []);
-
+    setTodos({...todos, [Date.now()]:{todo, working}})
+    setTodo('')
+  }
+  const remove = (key) => {
+    let todos_new = {...todos}
+    delete todos_new[key]
+    setTodos(todos_new)
+  }
   return (
     <View style={styles.container}>
-      <View style={styles.city}>
-        {city?.split(' ').map((el, ind) => <Text key={ind} style={[styles.cityName, styles.text].map(el2 => el2)}>{el}</Text>)}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={()=>setWorking(true)}>
+          <Text style={{...styles.header__text, color: working ? 'black' : theme.grey}}>Work</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={()=>setWorking(false)}>
+          <Text style={{...styles.header__text, color: !working ? 'black' : theme.grey}}>Travel</Text>
+        </TouchableOpacity>
       </View>
-      <ScrollView horizontal scrollEnabled pagingEnabled contentContainerStyle={styles.weather}>
-      {weathers?.map((el, ind) => {
-        return(
-        <View style={styles.day} key={ind}>
-          <View style={styles.tempBox}>
-          <Text style={[styles.temp, styles.text].map(el2 => el2)}>{parseFloat(el.temp.day).toFixed(1)}</Text>
-          <Fontisto
-                name={codes[el.weather[0].main]}
-                size={68}
-                color="white"
-                style={[styles.text].map(el2 => el2)}
-              />
-          </View>
-          <Text style={[styles.description, styles.text].map(el2 => el2)}>{el.weather[0].main}</Text>
-          <Text style={[styles.tinyText, styles.text].map(el2 => el2)}>{el.weather[0].description}</Text>  
-          <Text style={[styles.tinyText, styles.text].map(el2 => el2)}>{`${new Date(el.dt * 1000).getMonth()}월 ${new Date(el.dt * 1000).getDate()}일`}</Text>  
-        </View>
-        )
-      })}
-      </ScrollView>
-      <StatusBar style="auto" />
+      <View style={styles.body}>        
+        <TextInput onSubmitEditing={save} returnKeyType='done' style={styles.body__input} onChangeText={setTodo} value={todo} placeholder='Please type what you need to do.'/>
+        {Object.keys(todos).map((key) => 
+          working == todos[key].working ? 
+          <TouchableOpacity key={key} onPress={()=>remove(key)}>
+            <Text style={styles.body__todo}>{todos[key].todo}</Text>
+            </TouchableOpacity> :
+          null)}
+      </View>
+      <StatusBar backgroundColor='black'/>
     </View>
   );
 }
@@ -70,57 +50,38 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: `rgba(${getRand()},${getRand()},${getRand()}, 0.5)`
+    paddingVertical: 30,
+    paddingHorizontal: 15,
   },
-  city: {
-    flex: 1.2,
-    paddingTop: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
+  header: {
+    marginTop: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
   },
-  weather: {
+  header__text: {
+    fontSize: 45,
+    fontWeight: '600',
   },
-  icon: {
-    textShadowColor: 'rgba(0, 0, 0, 0.75)',
-    textShadowOffset: {width: -1, height: 1},
-    textShadowRadius: 5
+  body: {
+    marginTop: 5,
   },
-  day: {
-    width: SCREEN_WIDTH,
-    alignItems: "flex-start",
-    paddingHorizontal: 20,
+  body__input: {
+    marginTop: 10,
+    fontSize: 22,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 20,
+    fontWeight: '600',
+    borderWidth: 1,
   },
-  tempBox: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    width: "100%",
-    justifyContent: "space-between",
-  },
-  cityName: {
-    fontWeight: '500',
-    fontSize: 52,
-    color: 'white',
-    padding: 5
-  },
-  text: {
-  },
-  temp: {
-    marginTop: 50,
-    fontWeight: "600",
-    fontSize: 100,
-    color: "white",
-  },
-  description: {
-    marginTop: -10,
-    fontSize: 30,
-    color: "white",
-    fontWeight: "500",
-  },
-  tinyText: {
-    marginTop: -5,
-    fontSize: 25,
-    color: "white",
-    fontWeight: "500",
-  },
-
+  body__todo: {
+    marginTop: 10,
+    fontSize: 22,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: theme.grey,
+    padding: 10,
+  }
 });
