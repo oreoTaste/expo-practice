@@ -1,19 +1,35 @@
-import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, useColorScheme, Button, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { FontAwesome, FontAwesome5, AntDesign } from '@expo/vector-icons';
 import {theme} from './color';
+import React from "react";
 
-const storeData = async (todos) => {  
+const storeTodos = async (todos) => {  
   try {
-    await AsyncStorage.setItem('@storage_Key', JSON.stringify(todos))
+    await AsyncStorage.setItem('@storage_Todos', JSON.stringify(todos))
   } catch (e) {
     // saving error
   }
 }
-const loadData = async (todos) => {  
+const storeStatus = async (working) => {
   try {
-    const jsonValue = await AsyncStorage.getItem('@storage_Key')
+    await AsyncStorage.setItem('@storage_Working', JSON.stringify(working))
+  } catch (e) {
+    // saving error
+  }
+}
+const loadTodos = async () => {  
+  try {
+    const jsonValue = await AsyncStorage.getItem('@storage_Todos')
+    return jsonValue != null ? JSON.parse(jsonValue) : null;
+  } catch(e) {
+    // error reading value
+  }
+}
+const loadStatus = async () => {
+  try {
+    const jsonValue = await AsyncStorage.getItem('@storage_Working')
     return jsonValue != null ? JSON.parse(jsonValue) : null;
   } catch(e) {
     // error reading value
@@ -31,17 +47,20 @@ export default function App() {
   const [todos, setTodos] = useState({})
 
   useEffect(async () => {
-    let data = await loadData();
-    setTodos(data || {})
+    setTodos(await loadTodos() || {})
+    setWorking(await loadStatus())
   }, [])
-
+  const saveWorking = async (working) => {
+    setWorking(working)
+    await storeStatus(working)
+  }
   const save = async () => {
     if(todo == '') {
       return;
     }
 
-    setTodos({...todos, [Date.now()]:{todo, working}})
-    await storeData({...todos, [Date.now()]:{todo, working}})
+    setTodos({...todos, [Date.now()]:{todo, working, finished: false}})
+    await storeTodos({...todos, [Date.now()]:{todo, working, finished: false}})
     setTodo('')
   }
 
@@ -56,19 +75,29 @@ export default function App() {
           let todos_new = {...todos}
           delete todos_new[key]
           setTodos(todos_new)
-          storeData(todos_new)
+          storeTodos(todos_new)
         },
         style: 'destructive'
       },
     ]);
   }
+  const finish = (key) => {
+    let todos_new = {...todos}
+    
+    todos_new[key].finished = !todos_new[key].finished
+    setTodos(todos_new)
+    storeTodos(todos_new)
+  }
+  const edit = () => {
+    // 작성중
+  }
   return (
     <View style={{...styles.container, ...colorTheme}}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={()=>setWorking(true)}>
+        <TouchableOpacity onPress={()=>saveWorking(true)}>
           <Text style={{...styles.header__text, ...colorTheme, opacity: working ? 1 : 0.2}}>Work</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={()=>setWorking(false)}>
+        <TouchableOpacity onPress={()=>saveWorking(false)}>
           <Text style={{...styles.header__text, ...colorTheme, opacity: !working ? 1 : 0.2}}>Travel</Text>
         </TouchableOpacity>
       </View>
@@ -78,9 +107,22 @@ export default function App() {
       <ScrollView stickyHeaderIndices={true} style={styles.body}>
         {todos? Object.keys(todos).map((key) => 
           working == todos[key].working ? 
-          <TouchableOpacity key={key} onPress={()=>remove(key)}>
-            <Text style={{...styles.body__todo, ...colorBorder, ...colorTheme}}>{todos[key].todo}</Text>
-            </TouchableOpacity> :
+          <View key={key} style={{...styles.body__todo, ...colorBorder, ...colorTheme}}>
+            <TextInput editable={false} style={{...styles.body__todo__text, ...colorTheme, textDecorationLine: todos[key].finished ? 'line-through' : 'none'}}>
+              {todos[key].todo}
+            </TextInput>
+            <View style={{flexDirection: 'row'}}>
+              <TouchableOpacity style={{marginLeft: 25}} >
+                <AntDesign name="tool" onPress={edit}  size={24} style={{...colorTheme}} />
+              </TouchableOpacity>
+              <TouchableOpacity style={{marginLeft: 25}} >
+                <FontAwesome5 name="check" onPress={()=>finish(key)}  size={24} style={{...colorTheme}} />
+              </TouchableOpacity>
+              <TouchableOpacity style={{marginLeft: 25}} >
+                <FontAwesome name="trash-o" onPress={()=>remove(key)}  size={24} style={{...colorTheme}}/>
+              </TouchableOpacity>
+            </View>
+          </View> :
           null) : null}
       </ScrollView>
     </View>
@@ -130,11 +172,15 @@ const styles = StyleSheet.create({
   },
   body__todo: {
     marginTop: 10,
-    fontSize: 22,
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 5,
     borderWidth: 1,
     padding: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between'
+  },
+  body__todo__text: {
+    fontSize: 22,
   }
 });
