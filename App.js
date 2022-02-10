@@ -1,47 +1,40 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, useColorScheme, Button, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, useColorScheme, Button, Alert, Platform, Dimensions } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome, FontAwesome5, AntDesign } from '@expo/vector-icons';
 import {theme} from './color';
 import React from "react";
 
-const storeTodos = async (todos) => {  
+const store = async (data, keyword) => {
   try {
-    await AsyncStorage.setItem('@storage_Todos', JSON.stringify(todos))
+    await AsyncStorage.setItem(keyword, JSON.stringify(data))
   } catch (e) {
     // saving error
   }
 }
-const storeStatus = async (working) => {
+const load = async (keyword) => {
   try {
-    await AsyncStorage.setItem('@storage_Working', JSON.stringify(working))
-  } catch (e) {
-    // saving error
-  }
-}
-const loadTodos = async () => {  
-  try {
-    const jsonValue = await AsyncStorage.getItem('@storage_Todos')
+    const jsonValue = await AsyncStorage.getItem(keyword)
     return jsonValue != null ? JSON.parse(jsonValue) : null;
   } catch(e) {
     // error reading value
   }
 }
-const loadStatus = async () => {
-  try {
-    const jsonValue = await AsyncStorage.getItem('@storage_Working')
-    return jsonValue != null ? JSON.parse(jsonValue) : null;
-  } catch(e) {
-    // error reading value
-  }
-}
+const storeTodos = async (todos) => store(todos, '@storage_Todos')
+const storeStatus = async (working) => store(working, '@storage_Working')
+const loadTodos = async () => load('@storage_Todos')
+const loadStatus = async () => load('@storage_Working')
 
+const checkScheme = () => {
+  if(useColorScheme() == "light") {
+    return [styles.light, styles.lightBorder]
+  } else {
+    return [styles.dark, styles.darkBorder]
+  }
+}
 
 export default function App() {
-  const colorScheme = useColorScheme();
-  let colorTheme = colorScheme === "dark" ? styles.dark : styles.light
-  let colorBorder = colorScheme === "dark" ? styles.darkBorder : styles.lightBorder
-
+  const [colorTheme, colorBorder] = checkScheme()
   const [working, setWorking] = useState(true)
   const [todo, setTodo] = useState()
   const [todos, setTodos] = useState({})
@@ -65,6 +58,13 @@ export default function App() {
   }
 
   const remove = (key) => {
+    if(Platform.OS == 'web' && confirm("Do you want to delete?")) {
+      let todos_new = {...todos}
+      delete todos_new[key]
+      setTodos(todos_new)
+      storeTodos(todos_new)
+      return;
+    }
     Alert.alert('Do you want to delete?', null, [
       {
         text: 'Cancel',
@@ -102,18 +102,19 @@ export default function App() {
         </TouchableOpacity>
       </View>
       <View style={styles.body}>
-        <TextInput onSubmitEditing={save} returnKeyType='done' style={{...styles.body__input, ...colorTheme, ...colorBorder}} onChangeText={setTodo} value={todo} placeholder='Please type what you need to do.'/>
+        <TextInput onSubmitEditing={()=>save()} returnKeyType='done' style={{...styles.body__input, ...colorTheme, ...colorBorder}} onChangeText={setTodo} value={todo} placeholder='Please type what you need to do.'/>
       </View>
       <ScrollView stickyHeaderIndices={true} style={styles.body}>
         {todos? Object.keys(todos).map((key) => 
           working == todos[key].working ? 
           <View key={key} style={{...styles.body__todo, ...colorBorder, ...colorTheme}}>
-            <TextInput editable={false} style={{...styles.body__todo__text, ...colorTheme, textDecorationLine: todos[key].finished ? 'line-through' : 'none'}}>
+            <Text editable={false} style={{maxWidth: Dimensions.get('window').width - 190, ...styles.body__todo__text, ...colorTheme, textDecorationLine: todos[key].finished ? 'line-through' : 'none'}}>
               {todos[key].todo}
-            </TextInput>
+            </Text>
+            <TextInput style={{maxWidth:0}}></TextInput>
             <View style={{flexDirection: 'row'}}>
               <TouchableOpacity style={{marginLeft: 25}} >
-                <AntDesign name="tool" onPress={edit}  size={24} style={{...colorTheme}} />
+                <AntDesign name="tool" size={24} style={{...colorTheme}} />
               </TouchableOpacity>
               <TouchableOpacity style={{marginLeft: 25}} >
                 <FontAwesome5 name="check" onPress={()=>finish(key)}  size={24} style={{...colorTheme}} />
@@ -129,8 +130,9 @@ export default function App() {
   );
 }
 
-const styles = StyleSheet.create({
-  dark: {
+// const styles = StyleSheet.create({
+const styles = {
+    dark: {
     backgroundColor: theme["black"],
     color: theme["white"]
   },
@@ -183,4 +185,4 @@ const styles = StyleSheet.create({
   body__todo__text: {
     fontSize: 22,
   }
-});
+};
