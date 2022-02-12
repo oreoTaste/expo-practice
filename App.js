@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, useColorScheme, Button, Alert, Platform, Dimensions } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome, FontAwesome5, AntDesign } from '@expo/vector-icons';
 import {theme} from './color';
@@ -32,7 +33,6 @@ const checkScheme = () => {
     return [styles.dark, styles.darkBorder]
   }
 }
-
 export default function App() {
   const [colorTheme, colorBorder] = checkScheme()
   const [working, setWorking] = useState(true)
@@ -52,8 +52,8 @@ export default function App() {
       return;
     }
 
-    setTodos({...todos, [Date.now()]:{todo, working, finished: false}})
-    await storeTodos({...todos, [Date.now()]:{todo, working, finished: false}})
+    setTodos({...todos, [Date.now()]:{todo, working, finished: false, editing: false}})
+    await storeTodos({...todos, [Date.now()]:{todo, working, finished: false, editing: false}})
     setTodo('')
   }
 
@@ -81,15 +81,29 @@ export default function App() {
       },
     ]);
   }
+  const onChangeText = (key, text) => {
+    let todos_new = {...todos}
+    todos_new[key].todo = text
+    setTodos(todos_new)
+    storeTodos(todos_new)
+  }
   const finish = (key) => {
     let todos_new = {...todos}
-    
     todos_new[key].finished = !todos_new[key].finished
     setTodos(todos_new)
     storeTodos(todos_new)
   }
-  const edit = () => {
-    // 작성중
+  const editable = (key) => {
+    let todos_new = {...todos}
+    todos_new[key].editing = true
+    setTodos(todos_new)
+    storeTodos(todos_new)
+  }
+  const editDone = (key) => {
+    let todos_new = {...todos}
+    todos_new[key].editing = false
+    setTodos(todos_new)
+    storeTodos(todos_new)
   }
   return (
     <View style={{...styles.container, ...colorTheme}}>
@@ -102,37 +116,69 @@ export default function App() {
         </TouchableOpacity>
       </View>
       <View style={styles.body}>
-        <TextInput onSubmitEditing={()=>save()} returnKeyType='done' style={{...styles.body__input, ...colorTheme, ...colorBorder}} onChangeText={setTodo} value={todo} placeholder='Please type what you need to do.'/>
+        <TextInput onSubmitEditing={()=>save()}
+                   onChangeText={setTodo}
+                   returnKeyType='done'
+                   placeholder={working ? 'What to check..':'Where to go..'}
+                   value={todo}
+                   style={{...styles.body__input, ...colorTheme, ...colorBorder}}/>
       </View>
       <ScrollView stickyHeaderIndices={true} style={styles.body}>
         {todos? Object.keys(todos).map((key) => 
           working == todos[key].working ? 
-          <View key={key} style={{...styles.body__todo, ...colorBorder, ...colorTheme}}>
-            <Text editable={false} style={{maxWidth: Dimensions.get('window').width - 190, ...styles.body__todo__text, ...colorTheme, textDecorationLine: todos[key].finished ? 'line-through' : 'none'}}>
-              {todos[key].todo}
-            </Text>
-            <TextInput style={{maxWidth:0}}></TextInput>
+          <View key={key} style={{...styles.body__todo
+                                , ...colorBorder
+                                , ...colorTheme
+                                , borderStyle: todos[key].editing ? 'dashed' : null
+                                , backgroundColor: todos[key].editing ? theme.edit : null}}>
+            <TextInput editable={todos[key].editing}
+                       onSubmitEditing={()=>editDone(key)}
+                       onChangeText={(text)=>onChangeText(key, text)}
+                       style={{ minWidth: Dimensions.get('window').width - 220
+                              , maxWidth: Dimensions.get('window').width - 190
+                              , ...styles.body__todo__text
+                              , ...colorTheme
+                              , textDecorationLine: todos[key].finished ? 'line-through' : 'none', backgroundColor: 'transparent'}}
+                       value={todos[key].todo}/>
             <View style={{flexDirection: 'row'}}>
+              {todos[key].editing ? 
               <TouchableOpacity style={{marginLeft: 25}} >
-                <AntDesign name="tool" size={24} style={{...colorTheme}} />
+                <FontAwesome5 name="spell-check" 
+                              onPress={()=>editDone(key)}
+                              size={24}
+                              style={{...colorTheme, backgroundColor: 'transparent'}} />
               </TouchableOpacity>
-              <TouchableOpacity style={{marginLeft: 25}} >
-                <FontAwesome5 name="check" onPress={()=>finish(key)}  size={24} style={{...colorTheme}} />
-              </TouchableOpacity>
-              <TouchableOpacity style={{marginLeft: 25}} >
-                <FontAwesome name="trash-o" onPress={()=>remove(key)}  size={24} style={{...colorTheme}}/>
-              </TouchableOpacity>
+              :
+              <>
+                <TouchableOpacity style={{marginLeft: 25}} >
+                  <AntDesign name="tool"
+                             onPress={()=>editable(key)}
+                             size={24} style={{...colorTheme}} />
+                </TouchableOpacity>
+                <TouchableOpacity style={{marginLeft: 25}} >
+                  <FontAwesome5 name="check"
+                                onPress={()=>finish(key)}
+                                size={24} style={{...colorTheme}} />
+                </TouchableOpacity>
+                <TouchableOpacity style={{marginLeft: 25}} >
+                  <FontAwesome name="trash-o"
+                                onPress={()=>remove(key)}
+                                size={24} style={{...colorTheme}}/>
+                </TouchableOpacity>
+              </>
+              }
             </View>
           </View> :
           null) : null}
       </ScrollView>
+      <StatusBar style="auto" />
     </View>
   );
 }
 
 // const styles = StyleSheet.create({
 const styles = {
-    dark: {
+  dark: {
     backgroundColor: theme["black"],
     color: theme["white"]
   },
@@ -184,5 +230,8 @@ const styles = {
   },
   body__todo__text: {
     fontSize: 22,
+  },
+  editing: {
+
   }
 };
