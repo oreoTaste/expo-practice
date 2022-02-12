@@ -1,0 +1,34 @@
+{
+  "files": {
+    "app.js": "/expo-practice/static/js/app.e95ad136.chunk.js",
+    "app.js.map": "/expo-practice/static/js/app.e95ad136.chunk.js.map",
+    "runtime~app.js": "/expo-practice/static/js/runtime~app.f0f70594.js",
+    "runtime~app.js.map": "/expo-practice/static/js/runtime~app.f0f70594.js.map",
+    "static/js/2.62351c31.chunk.js": "/expo-practice/static/js/2.62351c31.chunk.js",
+    "static/js/2.62351c31.chunk.js.map": "/expo-practice/static/js/2.62351c31.chunk.js.map",
+    "fonts/AntDesign.ttf": "/expo-practice/./fonts/AntDesign.ttf",
+    "fonts/Entypo.ttf": "/expo-practice/./fonts/Entypo.ttf",
+    "fonts/Feather.ttf": "/expo-practice/./fonts/Feather.ttf",
+    "fonts/FontAwesome.ttf": "/expo-practice/./fonts/FontAwesome.ttf",
+    "fonts/FontAwesome5_Brands.ttf": "/expo-practice/./fonts/FontAwesome5_Brands.ttf",
+    "fonts/FontAwesome5_Solid.ttf": "/expo-practice/./fonts/FontAwesome5_Solid.ttf",
+    "fonts/Fontisto.ttf": "/expo-practice/./fonts/Fontisto.ttf",
+    "fonts/Foundation.ttf": "/expo-practice/./fonts/Foundation.ttf",
+    "fonts/Ionicons.ttf": "/expo-practice/./fonts/Ionicons.ttf",
+    "fonts/MaterialCommunityIcons.ttf": "/expo-practice/./fonts/MaterialCommunityIcons.ttf",
+    "fonts/MaterialIcons.ttf": "/expo-practice/./fonts/MaterialIcons.ttf",
+    "fonts/SimpleLineIcons.ttf": "/expo-practice/./fonts/SimpleLineIcons.ttf",
+    "favicon-16.png": "/expo-practice/favicon-16.png",
+    "favicon-32.png": "/expo-practice/favicon-32.png",
+    "favicon.ico": "/expo-practice/favicon.ico",
+    "index.html": "/expo-practice/index.html",
+    "manifest.json": "/expo-practice/manifest.json",
+    "serve.json": "/expo-practice/serve.json",
+    "static/js/2.62351c31.chunk.js.LICENSE.txt": "/expo-practice/static/js/2.62351c31.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime~app.f0f70594.js",
+    "static/js/2.62351c31.chunk.js",
+    "static/js/app.e95ad136.chunk.js"
+  ]
+}
